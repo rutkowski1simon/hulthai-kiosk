@@ -55,11 +55,12 @@ html, body { width: 100%; height: 100%; background: var(--yellow); overflow: hid
 .cat-btn.active { background: var(--black); color: var(--yellow); }
 
 /* PRODUCTS */
-.products-grid { flex: 1; padding: 10px 14px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; align-content: start; scrollbar-width: none; }
+.products-grid { flex: 1; padding: 10px 14px 14px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 220px; gap: 10px; overflow-y: auto; align-content: start; scrollbar-width: none; }
+.product-card { height: 220px; overflow: hidden; }
 .products-grid::-webkit-scrollbar { display: none; }
 .product-card { background: var(--cream); border-radius: 20px; overflow: hidden; cursor: pointer; transition: transform 0.15s; border: 2.5px solid var(--black); width: 100%; }
 .product-card:active { transform: scale(0.97); }
-.product-img { width: 100%; aspect-ratio: 1/1; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 52px; border-bottom: 2px solid var(--black); }
+.product-img { width: 100%; height: 150px; flex-shrink: 0; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 52px; border-bottom: 2px solid var(--black); }
 .product-info { padding: 10px 12px 12px; background: var(--cream); }
 .product-name { font-family: 'Colby', Impact, sans-serif; font-weight: 900; font-size: 16px; color: var(--black); line-height: 1.2; margin-bottom: 4px; text-transform: uppercase; }
 .product-price { font-family: 'Colby', Impact, sans-serif; font-weight: 700; font-size: 13px; color: var(--red); }
