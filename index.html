@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HulThau Kiosk</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --yellow: #FAD22C;
+  --red: #E1231F;
+  --blue: #3878BD;
+  --cream: #FFF2D0;
+  --black: #1D1D1B;
+}
+html, body { width: 100%; height: 100%; overflow: hidden; }
+.app { width: 100%; height: 100vh; position: relative; overflow: hidden; background: var(--cream); }
+.screen { display: none; width: 100%; height: 100%; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* LOGIN */
+#screen-login { background: var(--black); align-items: center; justify-content: center; gap: 32px; padding: 40px; }
+.logo-block { text-align: center; }
+.logo-main { font-family: 'Anton', Impact, sans-serif; font-size: 72px; color: var(--yellow); letter-spacing: 6px; line-height: 1; }
+.logo-sub { font-size: 13px; color: #666; letter-spacing: 8px; margin-top: 6px; font-family: Arial; }
+.login-buttons { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 380px; }
+.btn-login { padding: 22px; font-size: 20px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 2px; border: none; border-radius: 4px; cursor: pointer; transition: transform 0.1s; }
+.btn-login:active { transform: scale(0.97); }
+.btn-customer { background: var(--yellow); color: var(--black); }
+.btn-admin { background: transparent; color: var(--yellow); border: 2px solid var(--yellow); }
+
+/* ORDER TYPE */
+#screen-ordertype { background: var(--black); align-items: center; justify-content: center; gap: 40px; padding: 40px; }
+.ordertype-title { font-family: 'Anton', Impact, sans-serif; font-size: 32px; color: var(--yellow); letter-spacing: 4px; }
+.ordertype-buttons { display: flex; gap: 28px; }
+.btn-ordertype { padding: 36px 52px; font-size: 26px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 2px; border: none; border-radius: 4px; cursor: pointer; background: var(--yellow); color: var(--black); min-width: 200px; transition: transform 0.1s; }
+.btn-ordertype:active { transform: scale(0.97); }
+
+/* MENU */
+#screen-menu { flex-direction: row !important; background: var(--cream); }
+.sidebar { width: 22%; background: var(--black); padding: 16px 0; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.sidebar-cat { padding: 18px 20px; font-size: 15px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 1px; color: #888; cursor: pointer; border-left: 4px solid transparent; transition: all 0.15s; }
+.sidebar-cat.active, .sidebar-cat:hover { color: var(--yellow); border-left-color: var(--yellow); background: rgba(250,210,44,0.08); }
+.menu-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.menu-topbar { background: var(--black); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.menu-topbar .restaurant-name { color: var(--yellow); font-family: 'Anton', Impact, sans-serif; font-size: 24px; letter-spacing: 3px; }
+.btn-logout-small { background: transparent; border: 1px solid #444; color: #888; padding: 8px 16px; font-size: 12px; font-family: Arial; border-radius: 4px; cursor: pointer; }
+.products-grid { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; overflow-y: auto; }
+.product-card { background: white; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.15s; border: 2px solid transparent; }
+.product-card:hover { transform: scale(1.02); border-color: var(--yellow); }
+.product-img { width: 100%; height: 120px; background: #f0ebe0; display: flex; align-items: center; justify-content: center; font-size: 42px; }
+.product-info { padding: 12px; }
+.product-name { font-family: 'Anton', Impact, sans-serif; font-size: 14px; letter-spacing: 0.5px; color: var(--black); margin-bottom: 4px; }
+.product-price { font-family: 'Anton', Impact, sans-serif; font-size: 18px; color: var(--red); }
+.menu-bottom { background: white; padding: 16px 20px; border-top: 2px solid #e8e8e8; display: flex; justify-content: flex-end; flex-shrink: 0; }
+.btn-order { background: var(--yellow); color: var(--black); border: none; padding: 16px 36px; font-size: 20px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+
+/* DISH MODAL */
+.modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal-overlay.active { display: flex; }
+.modal-box { background: white; border-radius: 12px; width: 90%; max-width: 500px; overflow: hidden; position: relative; }
+.modal-img { width: 100%; height: 200px; background: #f0ebe0; display: flex; align-items: center; justify-content: center; font-size: 64px; }
+.modal-body { padding: 24px; }
+.modal-title { font-family: 'Anton', Impact, sans-serif; font-size: 26px; color: var(--black); margin-bottom: 6px; letter-spacing: 1px; }
+.modal-ingredients { font-size: 13px; color: #999; font-family: Arial; margin-bottom: 20px; line-height: 1.5; }
+.modal-section-title { font-size: 11px; color: #bbb; font-family: Arial; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.modifier-options { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.mod-btn { padding: 10px 18px; font-size: 13px; font-family: Arial; border: 2px solid #e0e0e0; border-radius: 20px; cursor: pointer; background: white; transition: all 0.15s; }
+.mod-btn.selected { border-color: var(--yellow); background: var(--yellow); color: var(--black); font-weight: bold; }
+.modal-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+.modal-price { font-family: 'Anton', Impact, sans-serif; font-size: 28px; color: var(--red); }
+.btn-add { background: var(--yellow); border: none; color: var(--black); padding: 16px 32px; font-size: 16px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.btn-close-modal { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; z-index: 10; }
+
+/* CART */
+#screen-cart { background: var(--cream); padding: 28px; gap: 20px; overflow-y: auto; }
+.cart-title { font-family: 'Anton', Impact, sans-serif; font-size: 32px; color: var(--black); letter-spacing: 2px; }
+.cart-items { background: white; border-radius: 8px; overflow: hidden; }
+.cart-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px; border-bottom: 1px solid #f5f5f5; }
+.cart-item:last-child { border-bottom: none; }
+.cart-item-name { font-family: 'Anton', Impact, sans-serif; font-size: 16px; color: var(--black); }
+.cart-item-mods { font-size: 12px; color: #aaa; font-family: Arial; margin-top: 3px; }
+.cart-item-price { font-family: 'Anton', Impact, sans-serif; font-size: 18px; color: var(--red); white-space: nowrap; margin-left: 16px; }
+.discount-row { display: flex; gap: 12px; }
+.discount-input { flex: 1; padding: 14px 16px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; font-family: Arial; }
+.discount-input:focus { outline: none; border-color: var(--yellow); }
+.btn-apply { background: var(--blue); color: white; border: none; padding: 14px 24px; border-radius: 4px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 1px; cursor: pointer; }
+.cart-summary { background: white; border-radius: 8px; padding: 20px; }
+.summary-row { display: flex; justify-content: space-between; font-size: 14px; font-family: Arial; color: #777; padding: 6px 0; }
+.summary-row.total { font-family: 'Anton', Impact, sans-serif; font-size: 22px; color: var(--black); border-top: 2px solid #f0f0f0; padding-top: 14px; margin-top: 6px; }
+.cart-actions { display: flex; gap: 16px; margin-top: auto; }
+.btn-back { flex: 1; background: transparent; border: 2px solid var(--black); color: var(--black); padding: 18px; font-size: 16px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.btn-pay { flex: 2; background: var(--yellow); border: none; color: var(--black); padding: 18px; font-size: 22px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+
+/* PAYMENT */
+#screen-payment { background: var(--black); align-items: center; justify-content: center; gap: 40px; padding: 40px; }
+.payment-amount { text-align: center; }
+.payment-label { font-size: 14px; color: #666; font-family: Arial; letter-spacing: 4px; text-transform: uppercase; }
+.payment-total { font-family: 'Anton', Impact, sans-serif; font-size: 56px; color: var(--yellow); margin-top: 8px; }
+.payment-buttons { display: flex; gap: 28px; }
+.btn-payment { padding: 32px 56px; font-size: 24px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 2px; border: none; border-radius: 4px; cursor: pointer; min-width: 180px; transition: transform 0.1s; }
+.btn-payment:active { transform: scale(0.97); }
+.btn-card { background: var(--yellow); color: var(--black); }
+.btn-blik { background: transparent; color: var(--yellow); border: 2px solid var(--yellow); }
+
+/* THANK YOU */
+#screen-thankyou { background: var(--black); align-items: center; justify-content: center; gap: 28px; padding: 40px; text-align: center; }
+.thankyou-msg { font-family: 'Anton', Impact, sans-serif; font-size: 32px; color: white; letter-spacing: 2px; line-height: 1.4; }
+.thankyou-sub { font-size: 16px; color: #666; font-family: Arial; letter-spacing: 2px; }
+.order-number-big { font-family: 'Anton', Impact, sans-serif; font-size: 100px; color: var(--yellow); line-height: 1; }
+.btn-new-order { background: var(--yellow); color: var(--black); border: none; padding: 20px 48px; font-size: 18px; font-family: 'Anton', Impact, sans-serif; letter-spacing: 2px; border-radius: 4px; cursor: pointer; margin-top: 8px; }
+
+/* ADMIN */
+#screen-admin { flex-direction: row !important; background: #f5f5f5; }
+.admin-sidebar { width: 220px; background: var(--black); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+.admin-logo { padding: 20px 20px 16px; border-bottom: 1px solid #222; }
+.admin-logo .al-name { font-family: 'Anton', Impact, sans-serif; font-size: 22px; color: var(--yellow); letter-spacing: 3px; }
+.admin-logo .al-sub { font-size: 10px; color: #555; font-family: Arial; letter-spacing: 3px; margin-top: 2px; }
+.admin-section-title { padding: 16px 20px 4px; font-size: 10px; color: #444; letter-spacing: 2px; font-family: Arial; text-transform: uppercase; }
+.admin-nav-item { padding: 11px 20px; font-size: 14px; color: #888; cursor: pointer; font-family: Arial; transition: all 0.15s; border-left: 3px solid transparent; }
+.admin-nav-item:hover { color: white; background: rgba(255,255,255,0.04); }
+.admin-nav-item.active { color: var(--yellow); border-left-color: var(--yellow); background: rgba(250,210,44,0.07); }
+.admin-nav-item.danger { color: #c0392b; margin-top: auto; }
+.admin-content { flex: 1; padding: 28px; overflow-y: auto; }
+.admin-page { display: none; }
+.admin-page.active { display: block; }
+.admin-page-title { font-family: 'Anton', Impact, sans-serif; font-size: 28px; color: var(--black); letter-spacing: 1px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.btn-add-new { background: var(--yellow); border: none; color: var(--black); width: 38px; height: 38px; border-radius: 50%; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+.admin-table { width: 100%; background: white; border-radius: 8px; overflow: hidden; }
+.admin-table-row { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid #f5f5f5; gap: 12px; }
+.admin-table-row:last-child { border-bottom: none; }
+.admin-table-row:hover { background: #fafafa; }
+.row-name { flex: 1; font-size: 15px; font-family: Arial; color: var(--black); line-height: 1.5; }
+.row-sub { font-size: 12px; color: #bbb; }
+.row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.icon-btn { width: 34px; height: 34px; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: opacity 0.15s; }
+.icon-btn.eye { background: #e8f4ff; }
+.icon-btn.eye.off { background: #f0f0f0; opacity: 0.5; }
+.icon-btn.edit { background: #fff8e0; }
+.icon-btn.trash { background: #fff0f0; }
+.tag-pill { display: inline-block; background: #f5f5f5; color: #666; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-family: Arial; margin-right: 4px; margin-top: 2px; }
+.placeholder-page { color: #ccc; font-family: Arial; font-size: 14px; padding: 20px 0; }
+
+/* ADMIN MODAL */
+.admin-modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; }
+.admin-modal-overlay.active { display: flex; }
+.admin-modal { background: white; border-radius: 12px; padding: 32px; width: 90%; max-width: 440px; }
+.admin-modal-title { font-family: 'Anton', Impact, sans-serif; font-size: 22px; color: var(--black); margin-bottom: 24px; letter-spacing: 1px; }
+.form-group { margin-bottom: 18px; }
+.form-label { font-size: 11px; color: #aaa; font-family: Arial; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; display: block; }
+.form-input { width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 4px; font-size: 14px; font-family: Arial; transition: border-color 0.15s; }
+.form-input:focus { outline: none; border-color: var(--yellow); }
+.modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+.btn-cancel { flex: 1; background: transparent; border: 1.5px solid #e0e0e0; color: #888; padding: 13px; font-family: Arial; border-radius: 4px; cursor: pointer; }
+.btn-save { flex: 2; background: var(--yellow); border: none; color: var(--black); padding: 13px; font-family: 'Anton', Impact, sans-serif; font-size: 17px; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- LOGIN -->
+<div class="screen active" id="screen-login">
+  <div class="logo-block">
+    <div class="logo-main">HULTHAU</div>
+    <div class="logo-sub">THAI STREET FOOD</div>
+  </div>
+  <div class="login-buttons">
+    <button class="btn-login btn-customer" onclick="go('screen-ordertype')">PANEL KLIENTA</button>
+    <button class="btn-login btn-admin" onclick="go('screen-admin')">PANEL ADMINISTRATORA</button>
+  </div>
+</div>
+
+<!-- ORDER TYPE -->
+<div class="screen" id="screen-ordertype">
+  <div class="ordertype-title">GDZIE JESZ?</div>
+  <div class="ordertype-buttons">
+    <button class="btn-ordertype" onclick="go('screen-menu')">NA MIEJSCU</button>
+    <button class="btn-ordertype" onclick="go('screen-menu')">NA WYNOS</button>
+  </div>
+</div>
+
+<!-- MENU -->
+<div class="screen" id="screen-menu">
+  <div class="menu-main">
+    <div class="menu-topbar">
+      <span class="restaurant-name">HULTHAU</span>
+      <button class="btn-logout-small" onclick="go('screen-login')">WYLOGUJ</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden;">
+      <div class="sidebar">
+        <div class="sidebar-cat active" onclick="filterCat(this,'all')">WSZYSTKIE</div>
+        <div class="sidebar-cat" onclick="filterCat(this,'przystawki')">PRZYSTAWKI</div>
+        <div class="sidebar-cat" onclick="filterCat(this,'zupy')">ZUPY</div>
+        <div class="sidebar-cat" onclick="filterCat(this,'dania')">DANIA GŁÓWNE</div>
+        <div class="sidebar-cat" onclick="filterCat(this,'makarony')">MAKARONY</div>
+        <div class="sidebar-cat" onclick="filterCat(this,'napoje')">NAPOJE</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div class="products-grid" id="products-grid"></div>
+        <div class="menu-bottom">
+          <button class="btn-order" id="btn-order" onclick="go('screen-cart')">KOSZYK (0 ZŁ)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISH MODAL -->
+<div class="modal-overlay" id="modal-dish">
+  <div class="modal-box">
+    <button class="btn-close-modal" onclick="closeModal()">✕</button>
+    <div class="modal-img" id="modal-emoji">🍜</div>
+    <div class="modal-body">
+      <div class="modal-title" id="modal-name">Pad Thai</div>
+      <div class="modal-ingredients" id="modal-ingredients">makaron ryżowy, krewetki, jajko, kiełki fasoli, orzeszki</div>
+      <div class="modal-section-title">OSTROŚĆ</div>
+      <div class="modifier-options" id="mod-spice">
+        <button class="mod-btn selected" onclick="selectMod(this,'spice')">ŁAGODNE</button>
+        <button class="mod-btn" onclick="selectMod(this,'spice')">ŚREDNIE</button>
+        <button class="mod-btn" onclick="selectMod(this,'spice')">OSTRE 🌶</button>
+      </div>
+      <div class="modal-section-title">DODATKI</div>
+      <div class="modifier-options" id="mod-extras">
+        <button class="mod-btn" onclick="toggleExtra(this,10)">+ KREWETKI (+10 ZŁ)</button>
+        <button class="mod-btn" onclick="toggleExtra(this,8)">+ TOFU (+8 ZŁ)</button>
+        <button class="mod-btn" onclick="toggleExtra(this,12)">+ KURCZAK (+12 ZŁ)</button>
+      </div>
+      <div class="modal-footer">
+        <div class="modal-price" id="modal-price">28 ZŁ</div>
+        <button class="btn-add" onclick="addToCart()">DODAJ DO KOSZYKA</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CART -->
+<div class="screen" id="screen-cart">
+  <div class="cart-title">TWÓJ KOSZYK</div>
+  <div class="cart-items" id="cart-items-list"></div>
+  <div class="discount-row">
+    <input type="text" class="discount-input" placeholder="Kod rabatowy..." id="discount-code">
+    <button class="btn-apply">ZASTOSUJ</button>
+  </div>
+  <div class="cart-summary">
+    <div class="summary-row"><span>Suma częściowa</span><span id="sum-subtotal">0 zł</span></div>
+    <div class="summary-row"><span>Rabat</span><span style="color:var(--red)">-0 zł</span></div>
+    <div class="summary-row total"><span>RAZEM</span><span id="sum-total">0 ZŁ</span></div>
+  </div>
+  <div class="cart-actions">
+    <button class="btn-back" onclick="go('screen-menu')">← WRÓĆ DO MENU</button>
+    <button class="btn-pay" onclick="go('screen-payment')">ZAPŁAĆ →</button>
+  </div>
+</div>
+
+<!-- PAYMENT -->
+<div class="screen" id="screen-payment">
+  <div class="payment-amount">
+    <div class="payment-label">DO ZAPŁATY</div>
+    <div class="payment-total" id="payment-amount-display">0 ZŁ</div>
+  </div>
+  <div class="payment-buttons">
+    <button class="btn-payment btn-card" onclick="go('screen-thankyou')">KARTA</button>
+    <button class="btn-payment btn-blik" onclick="go('screen-thankyou')">BLIK</button>
+  </div>
+</div>
+
+<!-- THANK YOU -->
+<div class="screen" id="screen-thankyou">
+  <div class="thankyou-msg">DZIĘKUJEMY ZA ZAMÓWIENIE!<br>SMACZNEGO! 🙏</div>
+  <div class="thankyou-sub">NUMER TWOJEGO ZAMÓWIENIA:</div>
+  <div class="order-number-big" id="order-number">#042</div>
+  <button class="btn-new-order" onclick="newOrder()">NOWE ZAMÓWIENIE</button>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="screen-admin">
+  <div class="admin-sidebar">
+    <div class="admin-logo">
+      <div class="al-name">HULTHAU</div>
+      <div class="al-sub">PANEL ADMINA</div>
+    </div>
+    <div class="admin-section-title">MENU</div>
+    <div class="admin-nav-item active" onclick="adminPage('page-kategorie',this)">Kategorie</div>
+    <div class="admin-nav-item" onclick="adminPage('page-produkty',this)">Produkty</div>
+    <div class="admin-nav-item" onclick="adminPage('page-modyfikatory',this)">Modyfikatory</div>
+    <div class="admin-section-title">SPRZEDAŻ</div>
+    <div class="admin-nav-item" onclick="adminPage('page-promocje',this)">Promocje</div>
+    <div class="admin-nav-item" onclick="adminPage('page-kody',this)">Kody Rabatowe</div>
+    <div class="admin-nav-item" onclick="adminPage('page-lojalnosci',this)">Karta Lojalnościowa</div>
+    <div class="admin-section-title">ANALITYKA</div>
+    <div class="admin-nav-item" onclick="adminPage('page-statystyki',this)">Statystyki</div>
+    <div class="admin-nav-item" onclick="adminPage('page-historia',this)">Historia Zamówień</div>
+    <div class="admin-nav-item" onclick="adminPage('page-napiwki',this)">Napiwki</div>
+    <div class="admin-section-title">USTAWIENIA</div>
+    <div class="admin-nav-item" onclick="adminPage('page-godziny',this)">Godziny Otwarcia</div>
+    <div class="admin-nav-item" onclick="adminPage('page-konta',this)">Konta</div>
+    <div class="admin-nav-item" onclick="adminPage('page-wyglad',this)">Wygląd i Dane</div>
+    <div class="admin-nav-item danger" onclick="go('screen-login')">Wyloguj</div>
+  </div>
+  <div class="admin-content">
+
+    <div class="admin-page active" id="page-kategorie">
+      <div class="admin-page-title">KATEGORIE <button class="btn-add-new" onclick="openAdminModal('Dodaj kategorię')">+</button></div>
+      <div class="admin-table">
+        <div class="admin-table-row"><span class="row-name">Przystawki</span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj kategorię')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Zupy</span><div class="row-actions"><button class="icon-btn eye off">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj kategorię')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Dania Główne</span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj kategorię')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Makarony</span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj kategorię')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Napoje</span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj kategorię')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+      </div>
+    </div>
+
+    <div class="admin-page" id="page-produkty">
+      <div class="admin-page-title">PRODUKTY <button class="btn-add-new" onclick="openAdminModal('Dodaj produkt')">+</button></div>
+      <div class="admin-table">
+        <div class="admin-table-row"><span class="row-name">Pad Thai<br><span class="row-sub">Dania Główne · 28 zł</span></span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj produkt')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Tom Yum<br><span class="row-sub">Zupy · 22 zł</span></span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj produkt')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Som Tam<br><span class="row-sub">Przystawki · 18 zł</span></span><div class="row-actions"><button class="icon-btn eye off">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj produkt')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Green Curry<br><span class="row-sub">Dania Główne · 32 zł</span></span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj produkt')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Thai Iced Tea<br><span class="row-sub">Napoje · 12 zł</span></span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj produkt')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+      </div>
+    </div>
+
+    <div class="admin-page" id="page-modyfikatory">
+      <div class="admin-page-title">MODYFIKATORY <button class="btn-add-new" onclick="openAdminModal('Dodaj modyfikator')">+</button></div>
+      <div class="admin-table">
+        <div class="admin-table-row"><span class="row-name">Ostrość<br><span class="row-sub"><span class="tag-pill">Łagodne</span><span class="tag-pill">Średnie</span><span class="tag-pill">Ostre</span></span></span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj modyfikator')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Dodatki Białkowe<br><span class="row-sub"><span class="tag-pill">Krewetki +10</span><span class="tag-pill">Tofu +8</span><span class="tag-pill">Kurczak +12</span></span></span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj modyfikator')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+        <div class="admin-table-row"><span class="row-name">Rozmiar porcji<br><span class="row-sub"><span class="tag-pill">Mała</span><span class="tag-pill">Standardowa</span><span class="tag-pill">Duża +8</span></span></span><div class="row-actions"><button class="icon-btn eye">👁</button><button class="icon-btn edit" onclick="openAdminModal('Edytuj modyfikator')">✏️</button><button class="icon-btn trash">🗑</button></div></div>
+      </div>
+    </div>
+
+    <div class="admin-page" id="page-promocje"><div class="admin-page-title">PROMOCJE</div><div class="placeholder-page">Brak aktywnych promocji.</div></div>
+    <div class="admin-page" id="page-kody"><div class="admin-page-title">KODY RABATOWE</div><div class="placeholder-page">Brak kodów rabatowych.</div></div>
+    <div class="admin-page" id="page-lojalnosci"><div class="admin-page-title">KARTA LOJALNOŚCIOWA</div><div class="placeholder-page">Moduł w przygotowaniu.</div></div>
+    <div class="admin-page" id="page-statystyki"><div class="admin-page-title">STATYSTYKI</div><div class="placeholder-page">Moduł w przygotowaniu.</div></div>
+    <div class="admin-page" id="page-historia"><div class="admin-page-title">HISTORIA ZAMÓWIEŃ</div><div class="placeholder-page">Brak zamówień.</div></div>
+    <div class="admin-page" id="page-napiwki"><div class="admin-page-title">NAPIWKI</div><div class="placeholder-page">Moduł w przygotowaniu.</div></div>
+    <div class="admin-page" id="page-godziny"><div class="admin-page-title">GODZINY OTWARCIA</div><div class="placeholder-page">Moduł w przygotowaniu.</div></div>
+    <div class="admin-page" id="page-konta"><div class="admin-page-title">KONTA</div><div class="placeholder-page">Moduł w przygotowaniu.</div></div>
+    <div class="admin-page" id="page-wyglad"><div class="admin-page-title">WYGLĄD I DANE</div><div class="placeholder-page">Moduł w przygotowaniu.</div></div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="admin-modal-overlay" id="admin-modal">
+  <div class="admin-modal">
+    <div class="admin-modal-title" id="admin-modal-title">Dodaj kategorię</div>
+    <div class="form-group">
+      <label class="form-label">NAZWA</label>
+      <input type="text" class="form-input" placeholder="np. Przystawki">
+    </div>
+    <div class="form-group">
+      <label class="form-label">KOLEJNOŚĆ WYŚWIETLANIA</label>
+      <input type="number" class="form-input" placeholder="1">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAdminModal()">ANULUJ</button>
+      <button class="btn-save">ZAPISZ</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const products = [
+  { name: 'Pad Thai', cat: 'dania', price: 28, emoji: '🍜', ingredients: 'makaron ryżowy, krewetki, jajko, kiełki fasoli, orzeszki ziemne' },
+  { name: 'Tom Yum', cat: 'zupy', price: 22, emoji: '🍲', ingredients: 'galangal, trawa cytrynowa, liście limonki, grzyby, krewetki' },
+  { name: 'Som Tam', cat: 'przystawki', price: 18, emoji: '🥗', ingredients: 'zielona papaja, pomidory, orzeszki, suszone krewetki, sos rybny' },
+  { name: 'Green Curry', cat: 'dania', price: 32, emoji: '🍛', ingredients: 'mleko kokosowe, zielone curry, bazylia tajska, warzywa sezonowe' },
+  { name: 'Mango Sticky Rice', cat: 'przystawki', price: 16, emoji: '🥭', ingredients: 'ryż kleisty, świeże mango, mleko kokosowe, sezam' },
+  { name: 'Khao Man Gai', cat: 'dania', price: 26, emoji: '🍗', ingredients: 'ryż gotowany w bulionie drobiowym, kurczak, imbir, kolendra' },
+  { name: 'Thai Iced Tea', cat: 'napoje', price: 12, emoji: '🧋', ingredients: 'herbata tajska, mleko skondensowane, lód' },
+  { name: 'Coconut Water', cat: 'napoje', price: 10, emoji: '🥥', ingredients: 'świeża woda kokosowa, lód' },
+  { name: 'Pad See Ew', cat: 'makarony', price: 29, emoji: '🍝', ingredients: 'szeroki makaron ryżowy, wołowina, jajko, kapusta chińska' },
+  { name: 'Khao Pad', cat: 'makarony', price: 24, emoji: '🍚', ingredients: 'smażony ryż, jajko, marchew, cebula dymka, sos rybny' },
+];
+
+let cart = [];
+let currentProduct = null;
+let extraCost = 0;
+let orderCounter = 41;
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-cart') renderCart();
+  if (id === 'screen-payment') {
+    document.getElementById('payment-amount-display').textContent = getTotal() + ' ZŁ';
+  }
+  if (id === 'screen-thankyou') {
+    orderCounter++;
+    document.getElementById('order-number').textContent = '#' + String(orderCounter).padStart(3, '0');
+  }
+}
+
+function filterCat(el, cat) {
+  document.querySelectorAll('.sidebar-cat').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderProducts(cat);
+}
+
+function renderProducts(cat) {
+  const grid = document.getElementById('products-grid');
+  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
+  grid.innerHTML = filtered.map(p => `
+    <div class="product-card" onclick="openProduct(${products.indexOf(p)})">
+      <div class="product-img">${p.emoji}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">${p.price} zł</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openProduct(idx) {
+  currentProduct = products[idx];
+  extraCost = 0;
+  document.getElementById('modal-emoji').textContent = currentProduct.emoji;
+  document.getElementById('modal-name').textContent = currentProduct.name;
+  document.getElementById('modal-ingredients').textContent = currentProduct.ingredients;
+  document.getElementById('modal-price').textContent = currentProduct.price + ' ZŁ';
+  document.querySelectorAll('#mod-extras .mod-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#mod-spice .mod-btn').forEach((b, i) => {
+    b.classList.remove('selected');
+    if (i === 0) b.classList.add('selected');
+  });
+  document.getElementById('modal-dish').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal-dish').classList.remove('active');
+}
+
+function selectMod(btn, group) {
+  document.querySelectorAll(`#mod-${group} .mod-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function toggleExtra(btn, cost) {
+  if (btn.classList.contains('selected')) {
+    btn.classList.remove('selected');
+    extraCost -= cost;
+  } else {
+    btn.classList.add('selected');
+    extraCost += cost;
+  }
+  document.getElementById('modal-price').textContent = (currentProduct.price + extraCost) + ' ZŁ';
+}
+
+function addToCart() {
+  const spice = document.querySelector('#mod-spice .mod-btn.selected')?.textContent || 'ŁAGODNE';
+  const extras = Array.from(document.querySelectorAll('#mod-extras .mod-btn.selected')).map(b => b.textContent);
+  cart.push({ name: currentProduct.name, price: currentProduct.price + extraCost, mods: [spice, ...extras] });
+  updateCartButton();
+  closeModal();
+}
+
+function updateCartButton() {
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  document.getElementById('btn-order').textContent = `KOSZYK (${total} ZŁ)`;
+}
+
+function getTotal() {
+  return cart.reduce((s, i) => s + i.price, 0);
+}
+
+function renderCart() {
+  const list = document.getElementById('cart-items-list');
+  if (cart.length === 0) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:#ccc;font-family:Arial;">Koszyk jest pusty</div>';
+  } else {
+    list.innerHTML = cart.map(item => `
+      <div class="cart-item">
+        <div>
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-mods">${item.mods.join(' · ')}</div>
+        </div>
+        <div class="cart-item-price">${item.price} zł</div>
+      </div>
+    `).join('');
+  }
+  const total = getTotal();
+  document.getElementById('sum-subtotal').textContent = total + ' zł';
+  document.getElementById('sum-total').textContent = total + ' ZŁ';
+}
+
+function newOrder() {
+  cart = [];
+  updateCartButton();
+  go('screen-login');
+}
+
+function adminPage(id, el) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.admin-nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openAdminModal(title) {
+  document.getElementById('admin-modal-title').textContent = title;
+  document.getElementById('admin-modal').classList.add('active');
+}
+
+function closeAdminModal() {
+  document.getElementById('admin-modal').classList.remove('active');
+}
+
+renderProducts('all');
+</script>
+</body>
+</html>
